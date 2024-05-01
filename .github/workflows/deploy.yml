@@ -1,70 +1,73 @@
-name: Example CI Django + Postgres Tests
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-# Controls when the workflow will run
+name: Python application
+
 on:
-  # Allows you to call this workflow within another workflow
-  workflow_call:
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-  # Triggered based on the git event type
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
+
     runs-on: ubuntu-latest
-    # Add in environment variables for the entire "build" job
-    env:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_HOST: localhost 
-      POSTGRES_DB: djtesting
-      POSTGRES_PORT: 5432
-      DJANGO_SECRET_KEY: test-key-not-good
+
     services:
-      postgres_main:
+      postgres:
         image: postgres:12
         env:
           POSTGRES_USER: root
           POSTGRES_PASSWORD: 0909
           POSTGRES_DB: udm
+
         ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready 
-          --health-interval 10s 
-          --health-timeout 5s 
-          --health-retries 5
-    # If you want to test multiple python version(s)
-    strategy:
-      matrix:
-        python-version: ["3.8"] # ["3.8", "3.9", "3.10"]
-    # Steps represent a sequence of tasks that will be executed as part of the job
+          - 5433:5432
+
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install requirements
-        run: |
-          pip install -r requirements.txt
-      - name: Run Tests
-        # Step specific environment variables
-        env:
-          DEBUG: "0"
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_HOST: localhost 
-          POSTGRES_DB: djtesting
-          POSTGRES_PORT: 5432
-          DJANGO_SECRET_KEY: django-insecure-=k7lu-^dgorz_1!_xyvq6p0*)lqvj%kzfte8yjg8lk#+_4wyo9
-        run: |
-          python manage.py test
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Test with Unittest
+      env: 
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        DB_ENGINE: ${{secrets.DB_ENGINE}}
+          
+      run: |
+        python manage.py collectstatic --no-input
+        coverage run manage.py test && coverage report --fail-under=75 && coverage xml
+
+
+
+    - name: Report coverage to codecov
+      env: 
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        DB_ENGINE: ${{secrets.DB_ENGINE}}
+
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.xml
+        directory: ./coverage/reports/
+        fail_ci_if_error: true
