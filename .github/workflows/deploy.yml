@@ -60,11 +60,11 @@ jobs:
         # Step specific environment variables
         env:
           DEBUG: "0"
-          DJANGO_SECRET_KEY: ${{ env.DJANGO_SECRET_KEY }}
-          DB_USERNAME: ${{ env.POSTGRES_USER }}
-          DB_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
-          DB_HOST: ${{ env.POSTGRES_HOST }}
-          DB_DATABASE: ${{ env.POSTGRES_DB }}
-          DB_PORT: ${{ env.POSTGRES_PORT }}
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST: localhost 
+          POSTGRES_DB: djtesting
+          POSTGRES_PORT: 5432
+          DJANGO_SECRET_KEY: django-insecure-=k7lu-^dgorz_1!_xyvq6p0*)lqvj%kzfte8yjg8lk#+_4wyo9
         run: |
           python manage.py test
