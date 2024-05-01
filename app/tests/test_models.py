@@ -1,5 +1,5 @@
 from django.test import TestCase
-from udms.models import DisciplinaryCase
+from app.models import DisciplinaryCase
 
 class DisciplinaryCaseTestModel(TestCase):
     @classmethod
